@@ -23,6 +23,7 @@ fn validates_backup_addresses() {
         BackupAddress::full("2026-05-10T20:00:00"),
         BackupAddress::game("mc", "v1"),
         BackupAddress::asset("cover-mc", "latest"),
+        BackupAddress::sync("library", "manifest"),
     ];
     for address in valid {
         address.validate().expect("valid address");
@@ -32,5 +33,8 @@ fn validates_backup_addresses() {
     assert!(invalid.validate().is_err());
 
     invalid = BackupAddress::db("bad space");
+    assert!(invalid.validate().is_err());
+
+    invalid = BackupAddress::sync("bad/slash", "manifest");
     assert!(invalid.validate().is_err());
 }

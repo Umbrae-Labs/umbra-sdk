@@ -4,7 +4,7 @@ import type { QuotaInfo } from './user'
 import { UmbraError } from './errors'
 import { normalizeContentHash } from './hash'
 
-export type BackupCategory = 'db' | 'full' | 'game' | 'asset'
+export type BackupCategory = 'db' | 'full' | 'game' | 'asset' | 'sync'
 
 export interface BackupAddress {
   category: BackupCategory
@@ -28,6 +28,12 @@ export function assetBackup(subject: string, version: string): BackupAddress {
   return { category: 'asset', subject, version }
 }
 
+// syncBackup 与 assetBackup 一样允许同三元组覆盖（LWW），
+// 内容协议（manifest / tombstones / 分表记录等）由调用方自行定义。
+export function syncBackup(subject: string, version: string): BackupAddress {
+  return { category: 'sync', subject, version }
+}
+
 const subjectPattern = /^[A-Za-z0-9_-]{1,64}$/
 const versionPattern = /^[A-Za-z0-9_\-.:]{1,64}$/
 
@@ -37,7 +43,7 @@ export function validateAddress(address: BackupAddress) {
       throw UmbraError.invalidInput(`subject must be empty for ${address.category} backups`)
     }
   }
-  else if (address.category === 'game' || address.category === 'asset') {
+  else if (address.category === 'game' || address.category === 'asset' || address.category === 'sync') {
     if (!address.subject || !subjectPattern.test(address.subject)) {
       throw UmbraError.invalidInput('subject must match ^[A-Za-z0-9_-]{1,64}$')
     }

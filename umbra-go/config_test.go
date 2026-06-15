@@ -26,6 +26,7 @@ func TestValidateAddress(t *testing.T) {
 		FullBackup("v1"),
 		GameBackup("minecraft", "v1"),
 		AssetBackup("cover-minecraft", "latest"),
+		SyncBackup("library", "manifest"),
 	}
 	for _, address := range valid {
 		if err := ValidateAddress(address); err != nil {
@@ -37,6 +38,7 @@ func TestValidateAddress(t *testing.T) {
 		{Category: CategoryDB, Subject: "x", Version: "v1"},
 		{Category: CategoryGame, Subject: "", Version: "v1"},
 		{Category: CategoryAsset, Subject: "bad/slash", Version: "v1"},
+		{Category: CategorySync, Subject: "", Version: "manifest"},
 		{Category: CategoryFull, Version: "bad space"},
 	}
 	for _, address := range invalid {
