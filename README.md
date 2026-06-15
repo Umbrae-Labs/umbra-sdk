@@ -11,7 +11,7 @@ workflows. Support popular desktop development frameworks such as Electron, Taur
 
 | SDK | Directory | Package |
 | --- | --- | --- |
-| TypeScript | `umbra-typescript` | `umbra-sdk` |
+| TypeScript | `umbra-typescript` | `@umbrae-labs/umbra-sdk` |
 | Rust | `umbra-rust` | `umbra-sdk` |
 | Go | `umbra-go` | `github.com/Umbrae-Labs/umbra-sdk/umbra-go` |
 

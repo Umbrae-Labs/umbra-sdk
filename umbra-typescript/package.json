@@ -1,5 +1,5 @@
 {
-  "name": "umbra-sdk",
+  "name": "@umbrae-labs/umbra-sdk",
   "version": "0.1.0",
   "description": "TypeScript SDK for Umbra desktop clients",
   "type": "module",

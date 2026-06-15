@@ -1,22 +1,22 @@
-# umbra-sdk
+# @umbrae-labs/umbra-sdk
 
 TypeScript SDK for Umbra desktop clients.
 
 Status: MVP SDK implementation.
 
-Package name: `umbra-sdk`
+Package name: `@umbrae-labs/umbra-sdk`
 
 ## Install
 
 ```bash
-pnpm add umbra-sdk
+pnpm add @umbrae-labs/umbra-sdk
 ```
 
 ## Entries
 
-- `umbra-sdk`: core SDK. Uses Web APIs: `fetch`, Web Crypto, and app-provided storage.
-- `umbra-sdk/node`: Node helpers for token files, loopback callback, browser opening, file upload/download.
-- `umbra-sdk/electron`: Electron main-process helpers. Re-exports `node` helpers and adds Windows device metadata detection.
+- `@umbrae-labs/umbra-sdk`: core SDK. Uses Web APIs: `fetch`, Web Crypto, and app-provided storage.
+- `@umbrae-labs/umbra-sdk/node`: Node helpers for token files, loopback callback, browser opening, file upload/download.
+- `@umbrae-labs/umbra-sdk/electron`: Electron main-process helpers. Re-exports `node` helpers and adds Windows device metadata detection.
 
 ## Recommended Electron Usage
 
@@ -25,7 +25,7 @@ device registration. `client.login()` performs OAuth login and registers the
 device when no stored `device_id + device_secret` exists.
 
 ```ts
-import { gameBackup, UmbraClient } from 'umbra-sdk'
+import { gameBackup, UmbraClient } from '@umbrae-labs/umbra-sdk'
 import {
   detectWindowsDeviceMetadata,
   FileDeviceCredentialStore,
@@ -33,7 +33,7 @@ import {
   LoopbackCallbackReceiver,
   SystemBrowserOpener,
   uploadFile,
-} from 'umbra-sdk/electron'
+} from '@umbrae-labs/umbra-sdk/electron'
 
 const device = await detectWindowsDeviceMetadata({
   appVersion: '1.0.0',
@@ -80,7 +80,7 @@ The core entry can be used when the app supplies storage and device metadata
 itself.
 
 ```ts
-import { MemoryDeviceCredentialStore, MemoryTokenStore, UmbraClient } from 'umbra-sdk'
+import { MemoryDeviceCredentialStore, MemoryTokenStore, UmbraClient } from '@umbrae-labs/umbra-sdk'
 
 const client = new UmbraClient({
   baseUrl: 'https://umbra.example.com',
@@ -181,7 +181,7 @@ Advanced deployments can override any endpoint in the constructor config.
 ## Notes
 
 - The core entry is Web API based and expects `fetch` plus Web Crypto.
-- `umbra-sdk/electron` should be used from Electron main process, not renderer.
+- `@umbrae-labs/umbra-sdk/electron` should be used from Electron main process, not renderer.
 - `FileTokenStore` and `FileDeviceCredentialStore` are for development and examples. Production apps should use OS keychain-backed stores.
 - `registrationToken` and `deviceSecret` are sensitive. Do not store them in ordinary user-editable config.
 - `uploadFile` and `downloadFile` stream file content in Node/Electron instead of loading whole backup files into memory.
