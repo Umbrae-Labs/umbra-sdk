@@ -5,7 +5,7 @@ Umbra backup services.
 
 It provides a unified way to connect desktop game managers to Umbra account
 authorization, device registration, signed backup APIs, and upload/download
-workflows.
+workflows. Support popular desktop development frameworks such as Electron, Tauri, and Walis
 
 ## Packages
 
