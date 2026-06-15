@@ -1,0 +1,52 @@
+{
+  "name": "umbra-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for Umbra desktop clients",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Umbrae-Labs/umbra-sdk.git",
+    "directory": "umbra-typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/Umbrae-Labs/umbra-sdk/issues"
+  },
+  "homepage": "https://github.com/Umbrae-Labs/umbra-sdk/tree/main/umbra-typescript#readme",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
+    },
+    "./electron": {
+      "types": "./dist/electron.d.ts",
+      "import": "./dist/electron.js",
+      "require": "./dist/electron.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "tsdown": "^0.18.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}

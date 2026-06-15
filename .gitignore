@@ -1,0 +1,34 @@
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+tokens.json
+device.json
+*.secret
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript
+umbra-typescript/node_modules/
+umbra-typescript/dist/
+umbra-typescript/coverage/
+umbra-typescript/.turbo/
+
+# Rust
+umbra-rust/target/
+
+# Go
+umbra-go/bin/
+umbra-go/coverage.out
+umbra-go/*.test

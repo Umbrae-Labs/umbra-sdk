@@ -1,0 +1,31 @@
+[package]
+name = "umbra-sdk"
+version = "0.1.0"
+edition = "2021"
+description = "Rust SDK for Umbra desktop clients"
+license = "MIT"
+repository = "https://github.com/Umbrae-Labs/umbra-sdk"
+readme = "README.md"
+
+[dependencies]
+async-trait = "0.1"
+base64 = "0.22"
+bytes = "1"
+chrono = { version = "0.4", features = ["serde"] }
+hex = "0.4"
+hmac = "0.12"
+mime_guess = "2"
+rand = "0.8"
+regex = "1"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+tokio = { version = "1", features = ["fs", "io-util", "macros", "net", "process", "rt-multi-thread", "sync", "time"] }
+tokio-util = { version = "0.7", features = ["io"] }
+url = "2"
+
+[dev-dependencies]
+httpmock = "0.8"
+tempfile = "3"
