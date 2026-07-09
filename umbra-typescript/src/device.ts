@@ -12,6 +12,7 @@ export interface DeviceMetadata {
   os_version?: string
   app_version?: string
   metadata?: Record<string, unknown>
+  readonly __umbraAutoCollectedDeviceMetadata: true
 }
 
 export interface DeviceRegistrationInput {
@@ -25,6 +26,24 @@ interface DeviceRegistrationRequest {
   credential_id?: string
   registration_token?: string
   device: DeviceMetadata
+}
+
+export type CollectedDeviceMetadataFields = Omit<DeviceMetadata, '__umbraAutoCollectedDeviceMetadata'>
+
+const autoCollectedDeviceMetadata = new WeakSet<object>()
+
+export function markAutoCollectedDeviceMetadata(metadata: CollectedDeviceMetadataFields): DeviceMetadata {
+  autoCollectedDeviceMetadata.add(metadata)
+  Object.defineProperty(metadata, '__umbraAutoCollectedDeviceMetadata', {
+    value: true,
+    enumerable: false,
+    configurable: false,
+  })
+  return metadata as DeviceMetadata
+}
+
+function isAutoCollectedDeviceMetadata(metadata: DeviceMetadata) {
+  return typeof metadata === 'object' && metadata !== null && autoCollectedDeviceMetadata.has(metadata)
 }
 
 export interface ClientDevice {
@@ -91,6 +110,9 @@ export class DeviceClient {
 
   async register(input: DeviceRegistrationInput) {
     const credential = resolveRegistrationCredential(input)
+    if (!isAutoCollectedDeviceMetadata(input.device)) {
+      throw UmbraError.invalidInput('device metadata must be collected by the SDK')
+    }
     const credentialId = input.credentialId?.trim() || ''
     const request: DeviceRegistrationRequest = {
       device: input.device,

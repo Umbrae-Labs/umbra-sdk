@@ -29,6 +29,8 @@ pub struct DeviceMetadata {
     pub app_version: Option<String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub metadata: BTreeMap<String, serde_json::Value>,
+    #[serde(skip)]
+    auto_collected: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -149,6 +151,29 @@ impl DeviceRegistrationInput {
     }
 }
 
+impl DeviceMetadata {
+    pub(crate) fn auto_collected(
+        name: String,
+        platform: Option<String>,
+        os_version: Option<String>,
+        app_version: Option<String>,
+        metadata: BTreeMap<String, serde_json::Value>,
+    ) -> Self {
+        Self {
+            name,
+            platform,
+            os_version,
+            app_version,
+            metadata,
+            auto_collected: true,
+        }
+    }
+
+    fn is_auto_collected(&self) -> bool {
+        self.auto_collected
+    }
+}
+
 impl DeviceClient {
     pub(crate) fn new(api: Arc<ApiClient>) -> Self {
         Self { api }
@@ -159,6 +184,11 @@ impl DeviceClient {
         input: DeviceRegistrationInput,
     ) -> Result<DeviceRegistrationResult, UmbraError> {
         let secret = input.registration_secret()?;
+        if !input.device.is_auto_collected() {
+            return Err(UmbraError::invalid_input(
+                "device metadata must be collected by the SDK",
+            ));
+        }
         let result: DeviceRegistrationResult = self
             .api
             .post_registration_signed("/client/devices/register", &input, &secret)
@@ -307,5 +337,14 @@ mod tests {
         );
         assert!(parse_registration_token("bad").is_err());
         assert!(parse_registration_token("umbra_reg_v1_ucd_xxx.secret.value").is_err());
+    }
+
+    #[test]
+    fn manual_device_metadata_is_not_auto_collected() {
+        let metadata = DeviceMetadata {
+            name: "LunaBook".to_string(),
+            ..Default::default()
+        };
+        assert!(!metadata.is_auto_collected());
     }
 }

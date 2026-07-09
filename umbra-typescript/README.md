@@ -73,14 +73,21 @@ await uploadFile(
 `detectWindowsDeviceMetadata` reads Windows version registry values and hashes
 `MachineGuid` before placing it in metadata. Metadata is for display and audit
 only; request trust comes from the server-issued `device_id + device_secret`.
+Device registration only accepts metadata returned by SDK detection helpers.
+Plain object literals are rejected by `register` and `ensureRegistered`.
 
 ## Core Usage
 
-The core entry can be used when the app supplies storage and device metadata
-itself.
+The core entry can be used when the app supplies storage and does not need
+Node/Electron file helpers. For device registration, pass metadata collected by
+the platform helper, such as `detectWindowsDeviceMetadata` from the Electron
+entry.
 
 ```ts
 import { MemoryDeviceCredentialStore, MemoryTokenStore, UmbraClient } from '@umbrae-labs/umbra-sdk'
+import { detectWindowsDeviceMetadata } from '@umbrae-labs/umbra-sdk/electron'
+
+const device = await detectWindowsDeviceMetadata({ appVersion: '1.0.0' })
 
 const client = new UmbraClient({
   baseUrl: 'https://umbra.example.com',
@@ -90,12 +97,7 @@ const client = new UmbraClient({
   deviceStore: new MemoryDeviceCredentialStore(),
   deviceRegistration: {
     registrationToken: 'umbra_reg_v1_ucd_xxx.secret_xxx',
-    device: {
-      name: 'LunaBook',
-      platform: 'windows-amd64',
-      os_version: 'Windows 11 Pro 23H2 build 22631.3593',
-      app_version: '1.0.0',
-    },
+    device,
   },
 })
 
@@ -111,13 +113,11 @@ If you need separate control over OAuth login and device registration:
 ```ts
 await client.auth.login()
 
+const device = await detectWindowsDeviceMetadata({ appVersion: '1.0.0' })
+
 await client.devices.ensureRegistered({
   registrationToken: 'umbra_reg_v1_ucd_xxx.secret_xxx',
-  device: {
-    name: 'LunaBook',
-    platform: 'windows-amd64',
-    app_version: '1.0.0',
-  },
+  device,
 })
 ```
 

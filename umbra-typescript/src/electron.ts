@@ -1,10 +1,11 @@
-import type { DeviceMetadata } from './device'
+import type { CollectedDeviceMetadataFields, DeviceMetadata } from './device'
 import { execFile } from 'node:child_process'
 import { randomBytes, createHash } from 'node:crypto'
 import { readFile, mkdir, writeFile } from 'node:fs/promises'
 import { hostname } from 'node:os'
 import { dirname } from 'node:path'
 import { promisify } from 'node:util'
+import { markAutoCollectedDeviceMetadata } from './device'
 import { UmbraError } from './errors'
 
 export * from './node'
@@ -42,19 +43,19 @@ export async function detectWindowsDeviceMetadata(options: WindowsDeviceMetadata
     ? undefined
     : await readWindowsRegistryValue(String.raw`HKLM\SOFTWARE\Microsoft\Cryptography`, 'MachineGuid').catch(() => undefined)
 
-  return buildWindowsDeviceMetadata({
+  return markAutoCollectedDeviceMetadata(buildWindowsDeviceMetadata({
     hostname: hostname(),
     arch: process.arch,
     registry,
     ...(installId ? { installId } : {}),
     ...(machineGuid ? { machineGuid } : {}),
-  }, options)
+  }, options))
 }
 
 export function buildWindowsDeviceMetadata(
   source: WindowsDeviceMetadataSource,
   options: WindowsDeviceMetadataOptions = {},
-): DeviceMetadata {
+): CollectedDeviceMetadataFields {
   const metadata: Record<string, unknown> = { ...(options.metadata ?? {}) }
   const installId = options.installId?.trim() || source.installId?.trim()
   if (installId) metadata.install_id = installId

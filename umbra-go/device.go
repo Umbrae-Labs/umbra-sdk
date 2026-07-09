@@ -43,6 +43,8 @@ type DeviceMetadata struct {
 	AppVersion string         `json:"app_version,omitempty"`
 	OSVersion  string         `json:"os_version,omitempty"`
 	Metadata   map[string]any `json:"metadata,omitempty"`
+
+	autoCollected bool
 }
 
 type DeviceRegistrationOptions struct {
@@ -94,6 +96,9 @@ func (d *DeviceClient) Register(ctx context.Context, options DeviceRegistrationO
 	}
 	if strings.TrimSpace(options.Device.Name) == "" {
 		return nil, invalidInput("device name is required")
+	}
+	if !options.Device.autoCollected {
+		return nil, invalidInput("device metadata must be collected by the SDK")
 	}
 	requestCredentialID := strings.TrimSpace(options.CredentialID)
 	if strings.TrimSpace(options.RegistrationToken) == "" {

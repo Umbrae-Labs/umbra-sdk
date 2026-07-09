@@ -129,7 +129,7 @@ func TestDeviceRegisterSignsAndStoresCredentials(t *testing.T) {
 	result, err := client.Devices.Register(context.Background(), DeviceRegistrationOptions{
 		CredentialID:     credentialID,
 		CredentialSecret: credentialSecret,
-		Device:           DeviceMetadata{Name: "LunaBook", Platform: "darwin"},
+		Device:           DeviceMetadata{Name: "LunaBook", Platform: "windows-amd64", autoCollected: true},
 	})
 	if err != nil {
 		t.Fatalf("Register() error = %v", err)
@@ -143,6 +143,17 @@ func TestDeviceRegisterSignsAndStoresCredentials(t *testing.T) {
 	}
 	if stored == nil || stored.DeviceID != "dev_registered" || stored.DeviceSecret != "device-secret" {
 		t.Fatalf("stored credentials = %+v", stored)
+	}
+}
+
+func TestDeviceRegisterRejectsManualMetadata(t *testing.T) {
+	_, err := (&DeviceClient{}).Register(context.Background(), DeviceRegistrationOptions{
+		CredentialID:     "ucd_test",
+		CredentialSecret: "credential-secret",
+		Device:           DeviceMetadata{Name: "LunaBook", Platform: "windows-amd64"},
+	})
+	if err == nil || !strings.Contains(err.Error(), "device metadata must be collected by the SDK") {
+		t.Fatalf("Register() error = %v", err)
 	}
 }
 

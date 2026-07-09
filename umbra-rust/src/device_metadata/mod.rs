@@ -100,18 +100,18 @@ pub fn build_windows_device_metadata(
         }),
     );
 
-    Ok(DeviceMetadata {
-        name: source.hostname.trim().to_owned(),
-        platform: Some(format!("windows-{}", normalize_windows_arch(&source.arch))),
-        os_version: Some(windows_os_version(&source.registry)),
-        app_version: options
+    Ok(DeviceMetadata::auto_collected(
+        source.hostname.trim().to_owned(),
+        Some(format!("windows-{}", normalize_windows_arch(&source.arch))),
+        Some(windows_os_version(&source.registry)),
+        options
             .app_version
             .as_deref()
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned),
         metadata,
-    })
+    ))
 }
 
 pub fn load_or_create_windows_install_id(path: impl AsRef<Path>) -> Result<String, UmbraError> {

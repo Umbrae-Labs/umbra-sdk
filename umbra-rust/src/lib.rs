@@ -28,9 +28,8 @@ pub use device::{
     DeviceRegistrationResult,
 };
 pub use device_metadata::{
-    build_windows_device_metadata, detect_windows_device_metadata,
-    load_or_create_windows_install_id, parse_reg_query_value, WindowsDeviceMetadataOptions,
-    WindowsDeviceMetadataSource,
+    detect_windows_device_metadata, load_or_create_windows_install_id, parse_reg_query_value,
+    WindowsDeviceMetadataOptions,
 };
 pub use error::{ErrorKind, UmbraError};
 pub use opener::{BrowserOpener, NoopBrowserOpener, SystemBrowserOpener};

@@ -74,6 +74,10 @@ architecture, Windows version registry values, a stable random `install_id`,
 and a hashed `MachineGuid`. Metadata is for display and audit only; request
 trust comes from the server-issued `device_id + device_secret`.
 
+Device registration only accepts metadata returned by SDK detection helpers.
+Manually constructed `DeviceMetadata` values are rejected by `Register` and
+`EnsureRegistered`.
+
 ## Manual Device Registration
 
 If you do not want root `client.Login` to auto-register the device, keep using
@@ -84,14 +88,16 @@ if _, err := client.Auth.Login(ctx); err != nil {
 	panic(err)
 }
 
+device, err := umbra.DetectWindowsDeviceMetadata(umbra.WindowsDeviceMetadataOptions{
+	AppVersion: "1.0.0",
+})
+if err != nil {
+	panic(err)
+}
+
 _, err := client.Devices.EnsureRegistered(ctx, umbra.DeviceRegistrationOptions{
 	RegistrationToken: "umbra_reg_v1_ucd_xxx.secret_xxx",
-	Device: umbra.DeviceMetadata{
-		Name:       "LunaBook",
-		Platform:   "windows-amd64",
-		OSVersion:  "Windows 11 Pro 23H2 build 22631.3593",
-		AppVersion: "1.0.0",
-	},
+	Device:            device,
 })
 ```
 

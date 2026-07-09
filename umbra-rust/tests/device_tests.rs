@@ -2,12 +2,13 @@ use chrono::{Duration, Utc};
 use httpmock::{Method::POST, MockServer};
 use serde_json::json;
 use umbra_sdk::{
-    canonical_string, parse_registration_token, request_body_hash, sign_canonical_string,
-    DeviceCredential, DeviceCredentialStore, DeviceMetadata, DeviceRegistrationInput,
+    canonical_string, detect_windows_device_metadata, parse_registration_token, request_body_hash,
+    sign_canonical_string, DeviceCredential, DeviceCredentialStore, DeviceRegistrationInput,
     MemoryDeviceCredentialStore, MemoryTokenStore, NoopBrowserOpener, TokenSet, TokenStore,
-    UmbraClient,
+    UmbraClient, WindowsDeviceMetadataOptions,
 };
 
+#[cfg(windows)]
 #[tokio::test]
 async fn registers_device_with_registration_signature_and_saves_credential() {
     let server = MockServer::start_async().await;
@@ -19,10 +20,19 @@ async fn registers_device_with_registration_signature_and_saves_credential() {
                 .header("authorization", "Bearer token")
                 .header_missing("x-umbra-device-id")
                 .is_true(|req| verify_signature(req, "registration-secret", "registration"))
-                .json_body(json!({
-                    "credential_id": "ucd_test",
-                    "device": { "name": "LunaBook" }
-                }));
+                .is_true(|req| {
+                    let Ok(body) = serde_json::from_slice::<serde_json::Value>(req.body_ref())
+                    else {
+                        return false;
+                    };
+                    body.get("credential_id").and_then(|value| value.as_str()) == Some("ucd_test")
+                        && body
+                            .get("device")
+                            .and_then(|device| device.get("name"))
+                            .and_then(|value| value.as_str())
+                            .map(|name| !name.trim().is_empty())
+                            .unwrap_or(false)
+                });
             then.status(200).json_body(json!({
                 "code": 0,
                 "msg": "success",
@@ -63,16 +73,15 @@ async fn registers_device_with_registration_signature_and_saves_credential() {
         .build()
         .expect("config");
     let client = UmbraClient::new(config).expect("client");
+    let device = detect_windows_device_metadata(WindowsDeviceMetadataOptions::default())
+        .expect("detect device metadata");
 
     let result = client
         .devices()
         .register(DeviceRegistrationInput::with_credential(
             "ucd_test",
             "registration-secret",
-            DeviceMetadata {
-                name: "LunaBook".to_string(),
-                ..Default::default()
-            },
+            device,
         ))
         .await
         .expect("register device");

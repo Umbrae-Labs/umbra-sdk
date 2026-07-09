@@ -50,11 +50,12 @@ func DetectWindowsDeviceMetadata(options WindowsDeviceMetadataOptions) (DeviceMe
 	}
 
 	return DeviceMetadata{
-		Name:       strings.TrimSpace(name),
-		Platform:   "windows-" + runtime.GOARCH,
-		OSVersion:  windowsOSVersion(registry),
-		AppVersion: strings.TrimSpace(options.AppVersion),
-		Metadata:   metadata,
+		Name:          strings.TrimSpace(name),
+		Platform:      "windows-" + runtime.GOARCH,
+		OSVersion:     windowsOSVersion(registry),
+		AppVersion:    strings.TrimSpace(options.AppVersion),
+		Metadata:      metadata,
+		autoCollected: true,
 	}, nil
 }
 

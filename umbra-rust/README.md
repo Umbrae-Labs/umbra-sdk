@@ -70,6 +70,9 @@ async fn main() -> Result<(), umbra_sdk::UmbraError> {
 runtime architecture, Windows version registry values, a stable random
 `install_id`, and a hashed `MachineGuid`. Metadata is for display and audit
 only; request trust comes from the server-issued `device_id + device_secret`.
+Device registration only accepts metadata returned by SDK detection helpers.
+Manually constructed `DeviceMetadata` values are rejected by `register` and
+`ensure_registered`.
 
 ## Manual Device Registration
 

@@ -42,6 +42,12 @@ func TestLiveE2E(t *testing.T) {
 		username:   mustLiveEnv(t, "UMBRA_E2E_USERNAME"),
 		password:   mustLiveEnv(t, "UMBRA_E2E_PASSWORD"),
 	}
+	deviceMetadata, err := DetectWindowsDeviceMetadata(WindowsDeviceMetadataOptions{
+		AppVersion: "e2e",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	client, err := New(Config{
 		BaseURL:       baseURL,
@@ -54,12 +60,7 @@ func TestLiveE2E(t *testing.T) {
 		BrowserOpener: opener,
 		DeviceRegistration: &DeviceRegistrationOptions{
 			RegistrationToken: registrationToken,
-			Device: DeviceMetadata{
-				Name:       "Umbra Go SDK E2E",
-				Platform:   "e2e",
-				AppVersion: "e2e",
-				OSVersion:  "e2e",
-			},
+			Device:            deviceMetadata,
 		},
 	})
 	if err != nil {

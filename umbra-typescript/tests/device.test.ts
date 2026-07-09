@@ -9,6 +9,7 @@ import {
   sha256Base64Url,
   UmbraClient,
 } from '../src'
+import { markAutoCollectedDeviceMetadata } from '../src/device'
 import { json, readBody, startServer } from './helpers'
 
 const servers: Array<{ close: () => Promise<void> }> = []
@@ -106,7 +107,7 @@ describe('device signing', () => {
 
     const result = await client.devices.register({
       registrationToken: 'umbra_reg_v1_ucd_test.registration-secret',
-      device: { name: 'LunaBook' },
+      device: markAutoCollectedDeviceMetadata({ name: 'LunaBook' }),
     })
 
     expect(result.device.device_id).toBe('dev_registered')
@@ -114,6 +115,20 @@ describe('device signing', () => {
       deviceId: 'dev_registered',
       deviceSecret: 'device-secret',
     })
+  })
+
+  it('rejects manually constructed device metadata', async () => {
+    const client = new UmbraClient({
+      baseUrl: 'https://umbra.example.com',
+      clientId: 'client',
+      tokenStore: new MemoryTokenStore(),
+      deviceStore: new MemoryDeviceCredentialStore(),
+    })
+
+    await expect(client.devices.register({
+      registrationToken: 'umbra_reg_v1_ucd_test.registration-secret',
+      device: { name: 'LunaBook' } as any,
+    })).rejects.toThrow('device metadata must be collected by the SDK')
   })
 
   it('rotates a device secret and stores the replacement', async () => {
