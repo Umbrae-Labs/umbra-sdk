@@ -138,6 +138,36 @@ _ = result
 4. object storage PUT
 5. signed Umbra confirm request
 
+## Structured Sync
+
+Structured JSON data uses the independent, device-signed sync client. The SDK
+serializes the protocol and returns conflicts as normal result data; the
+application remains responsible for its local database transaction and merge
+policy.
+
+```go
+key := umbra.SyncRecordKey{
+	Namespace: "lunabox.library",
+	Collection: "games",
+	RecordID: "game-1",
+}
+mutation, err := umbra.NewUpsertMutation("mutation-1", key, 1, 0, map[string]any{
+	"name": "Example Game",
+})
+if err != nil {
+	panic(err)
+}
+result, err := client.Sync.Exchange(ctx, umbra.SyncExchangeInput{
+	Space:     umbra.SyncSpace{Name: "library"},
+	Mutations: []umbra.SyncMutation{mutation},
+})
+```
+
+Persist `result.NextCursor` only after applying `result.Changes` in a successful
+local transaction. Use `client.Sync.Snapshot` when bootstrap is required. The
+legacy object-backup `sync` category has been removed; object backups support
+only `db`, `full`, `game`, and `asset`.
+
 ## Device Secret Rotation
 
 ```go

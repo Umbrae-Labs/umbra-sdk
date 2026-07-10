@@ -1,4 +1,4 @@
-use umbra_sdk::{BackupAddress, UmbraClient};
+use umbra_sdk::{BackupAddress, BackupCategory, UmbraClient};
 
 #[test]
 fn config_derives_same_origin_endpoints() {
@@ -23,7 +23,6 @@ fn validates_backup_addresses() {
         BackupAddress::full("2026-05-10T20:00:00"),
         BackupAddress::game("mc", "v1"),
         BackupAddress::asset("cover-mc", "latest"),
-        BackupAddress::sync("library", "manifest"),
     ];
     for address in valid {
         address.validate().expect("valid address");
@@ -35,6 +34,5 @@ fn validates_backup_addresses() {
     invalid = BackupAddress::db("bad space");
     assert!(invalid.validate().is_err());
 
-    invalid = BackupAddress::sync("bad/slash", "manifest");
-    assert!(invalid.validate().is_err());
+    assert!(serde_json::from_str::<BackupCategory>("\"sync\"").is_err());
 }

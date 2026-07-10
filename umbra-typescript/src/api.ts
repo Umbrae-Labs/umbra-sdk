@@ -97,10 +97,10 @@ export class ApiClient {
   }
 
   async #credentialForPath(path: string) {
-    if (!path.startsWith('/client/backup/')) return null
+    if (!path.startsWith('/client/backup/') && !path.startsWith('/client/sync/')) return null
     const credential = await this.#config.deviceStore.load()
     if (!credential?.deviceId || !credential.deviceSecret) {
-      throw UmbraError.auth('device credentials are required for backup requests')
+      throw UmbraError.auth('device credentials are required for protected client requests')
     }
     return credential
   }

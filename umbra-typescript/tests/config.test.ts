@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { gameBackup, normalizeConfig, syncBackup, validateAddress } from '../src'
+import { gameBackup, normalizeConfig, validateAddress } from '../src'
 
 describe('config', () => {
   it('derives same-origin endpoints', () => {
@@ -20,8 +20,7 @@ describe('config', () => {
     expect(() => validateAddress(gameBackup('mc', 'v1'))).not.toThrow()
     expect(() => validateAddress(gameBackup('bad/slash', 'v1'))).toThrow()
     expect(() => validateAddress({ category: 'db', subject: 'x', version: 'v1' })).toThrow()
-    expect(() => validateAddress(syncBackup('library', 'manifest'))).not.toThrow()
-    expect(() => validateAddress({ category: 'sync', version: 'manifest' })).toThrow()
+    expect(() => validateAddress({ category: 'sync', subject: 'library', version: 'manifest' } as any)).toThrow()
   })
 })
 

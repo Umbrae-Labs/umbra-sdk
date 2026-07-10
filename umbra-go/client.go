@@ -11,6 +11,7 @@ type Client struct {
 	User    *UserClient
 	Backup  *BackupClient
 	Devices *DeviceClient
+	Sync    *SyncClient
 
 	config    Config
 	endpoints endpoints
@@ -53,6 +54,7 @@ func New(cfg Config) (*Client, error) {
 		api:  c.api,
 		http: normalized.HTTPClient,
 	}
+	c.Sync = &SyncClient{api: c.api}
 	return c, nil
 }
 

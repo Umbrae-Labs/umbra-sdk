@@ -135,7 +135,8 @@ func encodeBody(in any) ([]byte, error) {
 
 func isDeviceSignedPath(path string) bool {
 	path = strings.TrimSpace(path)
-	return path == "/client/backup" || strings.HasPrefix(path, "/client/backup/") || strings.HasPrefix(path, "client/backup/")
+	return path == "/client/backup" || strings.HasPrefix(path, "/client/backup/") || strings.HasPrefix(path, "client/backup/") ||
+		path == "/client/sync" || strings.HasPrefix(path, "/client/sync/") || strings.HasPrefix(path, "client/sync/")
 }
 
 func decodeEnvelope(res *http.Response, out any) error {

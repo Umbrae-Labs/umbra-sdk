@@ -9,6 +9,7 @@ mod device_metadata;
 mod error;
 mod opener;
 mod store;
+mod sync;
 mod user;
 
 pub use auth::{AuthCallback, AuthClient, Session, TokenSet};
@@ -36,5 +37,10 @@ pub use opener::{BrowserOpener, NoopBrowserOpener, SystemBrowserOpener};
 pub use store::{
     DeviceCredentialStore, FileDeviceCredentialStore, FileTokenStore, MemoryDeviceCredentialStore,
     MemoryTokenStore, TokenStore,
+};
+pub use sync::{
+    SyncAcceptedMutation, SyncChange, SyncClient, SyncConflict, SyncExchangeInput,
+    SyncExchangeResult, SyncMutation, SyncOperation, SyncRecordKey, SyncRejectedMutation,
+    SyncSnapshotInput, SyncSnapshotPage, SyncSpace, SYNC_PROTOCOL_VERSION,
 };
 pub use user::{QuotaInfo, UserClient, UserProfile};

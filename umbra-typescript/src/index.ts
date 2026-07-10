@@ -24,4 +24,5 @@ export {
 export * from './errors'
 export * from './opener'
 export * from './store'
+export * from './sync'
 export * from './user'

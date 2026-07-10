@@ -20,7 +20,6 @@ pub enum BackupCategory {
     Full,
     Game,
     Asset,
-    Sync,
 }
 
 impl BackupCategory {
@@ -30,7 +29,6 @@ impl BackupCategory {
             BackupCategory::Full => "full",
             BackupCategory::Game => "game",
             BackupCategory::Asset => "asset",
-            BackupCategory::Sync => "sync",
         }
     }
 }
@@ -76,16 +74,6 @@ impl BackupAddress {
         }
     }
 
-    /// `sync` 与 `asset` 一样允许同三元组覆盖（LWW），内容协议
-    /// （manifest / tombstones / 分表记录等）由调用方自行定义。
-    pub fn sync(subject: impl Into<String>, version: impl Into<String>) -> Self {
-        Self {
-            category: BackupCategory::Sync,
-            subject: Some(subject.into()),
-            version: version.into(),
-        }
-    }
-
     pub fn validate(&self) -> Result<(), UmbraError> {
         let subject_re = Regex::new(r"^[A-Za-z0-9_-]{1,64}$").expect("valid regex");
         let version_re = Regex::new(r"^[A-Za-z0-9_\-.:]{1,64}$").expect("valid regex");
@@ -97,7 +85,7 @@ impl BackupAddress {
                     ));
                 }
             }
-            BackupCategory::Game | BackupCategory::Asset | BackupCategory::Sync => {
+            BackupCategory::Game | BackupCategory::Asset => {
                 let subject = self.subject.as_deref().unwrap_or("");
                 if !subject_re.is_match(subject) {
                     return Err(UmbraError::invalid_input(

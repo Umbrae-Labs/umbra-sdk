@@ -150,6 +150,35 @@ Node/Electron file helpers also use the signed backup API automatically:
 await uploadFile(client.backups, gameBackup('mc', 'v1'), 'world.zip')
 ```
 
+## Structured Sync
+
+Structured JSON records use `client.sync`, independently from object backups.
+Exchange and snapshot requests are signed automatically. Conflicts and rejected
+mutations are returned as result arrays; the application owns local database
+transactions and conflict resolution.
+
+```ts
+import { newUpsertMutation } from '@umbrae-labs/umbra-sdk'
+
+const mutation = newUpsertMutation(
+  'mutation-1',
+  { namespace: 'lunabox.library', collection: 'games', record_id: 'game-1' },
+  1,
+  0,
+  { name: 'Example Game' },
+)
+
+const result = await client.sync.exchange({
+  space: { name: 'library' },
+  mutations: [mutation],
+})
+```
+
+Persist `result.next_cursor` only after applying `result.changes` in a
+successful local transaction. Use `client.sync.snapshot()` for bootstrap. The
+legacy object-backup `sync` category has been removed; object backups support
+only `db`, `full`, `game`, and `asset`.
+
 ## Device Secret Rotation
 
 ```ts

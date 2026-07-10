@@ -124,6 +124,37 @@ let presign = client
 
 `upload_file` also uses signed backup API calls internally.
 
+## Structured Sync
+
+Structured JSON records use the independent `client.sync()` interface. The SDK
+signs exchange and snapshot requests and returns conflicts as normal result
+data; the application owns local database transactions and merge policy.
+
+```rust
+use serde_json::json;
+use umbra_sdk::{SyncExchangeInput, SyncMutation, SyncRecordKey};
+
+let key = SyncRecordKey {
+    namespace: "lunabox.library".to_string(),
+    collection: "games".to_string(),
+    record_id: "game-1".to_string(),
+};
+let mut input = SyncExchangeInput::new("library");
+input.mutations.push(SyncMutation::upsert(
+    "mutation-1",
+    key,
+    1,
+    0,
+    json!({"name": "Example Game"}),
+)?);
+let result = client.sync().exchange(input).await?;
+```
+
+Persist `result.next_cursor` only after applying `result.changes` in a
+successful local transaction. Use `client.sync().snapshot(...)` for bootstrap.
+The legacy object-backup `sync` category has been removed; object backups
+support only `db`, `full`, `game`, and `asset`.
+
 ## Device Secret Rotation
 
 ```rust

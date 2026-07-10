@@ -5,6 +5,7 @@ import { AuthClient } from './auth'
 import { BackupClient } from './backup'
 import { normalizeConfig } from './config'
 import { DeviceClient } from './device'
+import { SyncClient } from './sync'
 import { UserClient } from './user'
 
 export class UmbraClient {
@@ -12,6 +13,7 @@ export class UmbraClient {
   readonly user: UserClient
   readonly backups: BackupClient
   readonly devices: DeviceClient
+  readonly sync: SyncClient
   readonly #deviceRegistration: UmbraConfig['deviceRegistration'] | undefined
 
   constructor(config: UmbraConfig) {
@@ -21,6 +23,7 @@ export class UmbraClient {
     this.user = new UserClient(api)
     this.backups = new BackupClient(api, normalized)
     this.devices = new DeviceClient(api, normalized.deviceStore, normalized.deviceRegistration)
+    this.sync = new SyncClient(api)
     this.#deviceRegistration = normalized.deviceRegistration
   }
 

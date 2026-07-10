@@ -13,7 +13,6 @@ const (
 	CategoryFull  BackupCategory = "full"
 	CategoryGame  BackupCategory = "game"
 	CategoryAsset BackupCategory = "asset"
-	CategorySync  BackupCategory = "sync"
 )
 
 type BackupAddress struct {
@@ -38,12 +37,6 @@ func AssetBackup(subject, version string) BackupAddress {
 	return BackupAddress{Category: CategoryAsset, Subject: subject, Version: version}
 }
 
-// SyncBackup 构造一个 sync 三元组地址。sync 与 asset 一样允许同三元组覆盖（LWW），
-// 内容协议（manifest / tombstones / 分表记录等）由调用方自行定义。
-func SyncBackup(subject, version string) BackupAddress {
-	return BackupAddress{Category: CategorySync, Subject: subject, Version: version}
-}
-
 var (
 	subjectPattern     = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 	versionPattern     = regexp.MustCompile(`^[A-Za-z0-9_\-.:]{1,64}$`)
@@ -59,7 +52,7 @@ func ValidateAddress(address BackupAddress) error {
 		if subject != "" {
 			return invalidInput("subject must be empty for %s backups", category)
 		}
-	case CategoryGame, CategoryAsset, CategorySync:
+	case CategoryGame, CategoryAsset:
 		if !subjectPattern.MatchString(subject) {
 			return invalidInput("subject must match %s", subjectPattern.String())
 		}
