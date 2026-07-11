@@ -174,10 +174,19 @@ const result = await client.sync.exchange({
 })
 ```
 
+Read pending mutations from the local outbox and place multiple items in
+`mutations` for one `exchange` call instead of calling the SDK once per record.
+One request accepts at most 500 mutations and 4 MiB of JSON. The TypeScript SDK
+does not split oversized input automatically, so a client-side target of about
+3.5 MiB leaves room for the request envelope.
+
 Persist `result.next_cursor` only after applying `result.changes` in a
-successful local transaction. Use `client.sync.snapshot()` for bootstrap. The
-legacy object-backup `sync` category has been removed; object backups support
-only `db`, `full`, `game`, and `asset`.
+successful local transaction together with mutation outcomes. Reuse the
+original mutation ID when retrying. For an initial upload into an empty space,
+create mutations use base version `0`; if the remote space may contain data,
+call `client.sync.snapshot()` before uploading. While `result.has_more` is true,
+continue pulling with `mutations: []`. The legacy object-backup `sync` category
+has been removed; object backups support only `db`, `full`, `game`, and `asset`.
 
 ## Device Secret Rotation
 

@@ -163,10 +163,19 @@ result, err := client.Sync.Exchange(ctx, umbra.SyncExchangeInput{
 })
 ```
 
+Read pending mutations from the local outbox and place multiple items in
+`Mutations` for one `Exchange` call instead of calling the SDK once per record.
+One request accepts at most 500 mutations and 4 MiB of JSON. The Go SDK does not
+split oversized input automatically, so a client-side target of about 3.5 MiB
+leaves room for the request envelope.
+
 Persist `result.NextCursor` only after applying `result.Changes` in a successful
-local transaction. Use `client.Sync.Snapshot` when bootstrap is required. The
-legacy object-backup `sync` category has been removed; object backups support
-only `db`, `full`, `game`, and `asset`.
+local transaction together with mutation outcomes. Reuse the original mutation
+ID when retrying. For an initial upload into an empty space, create mutations use
+base version `0`; if the remote space may contain data, call
+`client.Sync.Snapshot` before uploading. While `result.HasMore` is true, continue
+pulling with an empty `Mutations` slice. The legacy object-backup `sync` category
+has been removed; object backups support only `db`, `full`, `game`, and `asset`.
 
 ## Device Secret Rotation
 
