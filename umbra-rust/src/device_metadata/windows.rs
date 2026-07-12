@@ -1,4 +1,7 @@
 use std::collections::BTreeMap;
+use std::os::windows::process::CommandExt;
+
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 use crate::{
     device_metadata::{
@@ -63,6 +66,7 @@ fn read_current_version_registry() -> BTreeMap<String, String> {
 fn read_windows_registry_value(key: &str, value: &str) -> Result<String, UmbraError> {
     let output = std::process::Command::new("reg")
         .args(["query", key, "/v", value])
+        .creation_flags(CREATE_NO_WINDOW)
         .output()?;
     Ok(parse_reg_query_value(
         &String::from_utf8_lossy(&output.stdout),

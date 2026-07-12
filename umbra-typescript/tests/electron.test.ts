@@ -1,12 +1,28 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildWindowsDeviceMetadata,
+  detectWindowsDeviceMetadata,
   loadOrCreateWindowsInstallId,
   parseRegQueryValue,
 } from '../src/electron'
+
+const execFileMock = vi.hoisted(() => vi.fn((
+  _command: string,
+  args: string[],
+  _options: { windowsHide?: boolean },
+  callback: (error: Error | null, result: { stdout: string, stderr: string }) => void,
+) => {
+  const value = args.at(-1) ?? ''
+  callback(null, {
+    stdout: `${value}    REG_SZ    test-value`,
+    stderr: '',
+  })
+}))
+
+vi.mock('node:child_process', () => ({ execFile: execFileMock }))
 
 describe('electron windows metadata helpers', () => {
   it('parses reg query output', () => {
@@ -50,6 +66,24 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
       ubr: '3593',
       edition_id: 'Professional',
     })
+  })
+
+  it('hides every registry query subprocess window', async () => {
+    const platform = vi.spyOn(process, 'platform', 'get').mockReturnValue('win32')
+    execFileMock.mockClear()
+
+    try {
+      await detectWindowsDeviceMetadata({ installId: 'install-123' })
+    }
+    finally {
+      platform.mockRestore()
+    }
+
+    expect(execFileMock).toHaveBeenCalledTimes(6)
+    for (const call of execFileMock.mock.calls) {
+      expect(call[0]).toBe('reg')
+      expect(call[2]).toMatchObject({ windowsHide: true })
+    }
   })
 
   it('persists generated install ids', async () => {

@@ -14,6 +14,13 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
 	}
 }
 
+func TestWindowsRegistryCommandHidesWindow(t *testing.T) {
+	cmd := newWindowsRegistryCommand(windowsCurrentVersionKey, "ProductName")
+	if cmd.SysProcAttr == nil || !cmd.SysProcAttr.HideWindow {
+		t.Fatal("registry command must hide its subprocess window")
+	}
+}
+
 func TestWindowsOSVersion(t *testing.T) {
 	got := windowsOSVersion(map[string]string{
 		"ProductName":        "Windows 11 Pro",

@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 const windowsCurrentVersionKey = `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`
@@ -60,11 +61,17 @@ func DetectWindowsDeviceMetadata(options WindowsDeviceMetadataOptions) (DeviceMe
 }
 
 func readWindowsRegistryValue(key, value string) (string, error) {
-	out, err := exec.Command("reg", "query", key, "/v", value).Output()
+	out, err := newWindowsRegistryCommand(key, value).Output()
 	if err != nil {
 		return "", err
 	}
 	return parseRegQueryValue(string(out), value), nil
+}
+
+func newWindowsRegistryCommand(key, value string) *exec.Cmd {
+	cmd := exec.Command("reg", "query", key, "/v", value)
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	return cmd
 }
 
 func parseRegQueryValue(output, value string) string {
