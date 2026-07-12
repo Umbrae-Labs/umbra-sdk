@@ -162,12 +162,8 @@ export class LoopbackCallbackReceiver implements CallbackReceiver {
       res.end('not found')
       return
     }
-    const body = '<!doctype html><title>Umbra</title><p>Authorization completed. You can close this window.</p>'
-    res.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Content-Length': Buffer.byteLength(body),
-    })
-    res.end(body)
+    res.writeHead(204)
+    res.end()
   }
 }
 

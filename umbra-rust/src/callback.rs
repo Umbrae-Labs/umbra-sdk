@@ -91,12 +91,39 @@ async fn handle_stream(mut stream: TcpStream) -> Result<AuthCallback, UmbraError
             _ => {}
         }
     }
-    let body = "<!doctype html><title>Umbra</title><p>Authorization completed. You can close this window.</p>";
-    let response = format!(
-        "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-        body.len(),
-        body
-    );
-    stream.write_all(response.as_bytes()).await?;
+    stream
+        .write_all(b"HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n")
+        .await?;
     Ok(callback)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn loopback_callback_returns_no_content() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let callback_task = tokio::spawn(async move {
+            let (stream, _) = listener.accept().await.unwrap();
+            handle_stream(stream).await.unwrap()
+        });
+
+        let mut stream = TcpStream::connect(address).await.unwrap();
+        stream
+            .write_all(b"GET /auth/callback?code=test-code&state=test-state HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n")
+            .await
+            .unwrap();
+        let mut response = Vec::new();
+        stream.read_to_end(&mut response).await.unwrap();
+
+        assert_eq!(
+            String::from_utf8(response).unwrap(),
+            "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"
+        );
+        let callback = callback_task.await.unwrap();
+        assert_eq!(callback.code, "test-code");
+        assert_eq!(callback.state, "test-state");
+    }
 }

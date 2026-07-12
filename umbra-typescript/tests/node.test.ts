@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { gameBackup, MemoryDeviceCredentialStore, MemoryTokenStore, UmbraClient } from '../src'
-import { downloadFile, uploadFile } from '../src/node'
+import { downloadFile, LoopbackCallbackReceiver, uploadFile } from '../src/node'
 import { json, readBody, startServer } from './helpers'
 
 const servers: Array<{ close: () => Promise<void> }> = []
@@ -15,6 +15,21 @@ afterEach(async () => {
 })
 
 describe('node helpers', () => {
+  it('returns no content from the OAuth loopback callback', async () => {
+    const receiver = new LoopbackCallbackReceiver()
+    const redirectUri = await receiver.prepare('http://127.0.0.1:0/auth/callback')
+
+    try {
+      const response = await fetch(`${redirectUri}?code=test-code&state=test-state`)
+      expect(response.status).toBe(204)
+      await expect(response.text()).resolves.toBe('')
+      await expect(receiver.receive('test-state')).resolves.toMatchObject({ code: 'test-code' })
+    }
+    finally {
+      await receiver.close()
+    }
+  })
+
   it('uploads a file through a streaming presigned PUT', async () => {
     const tempDir = await mkdtemp(join(tmpdir(), 'umbra-sdk-'))
     tempDirs.push(tempDir)

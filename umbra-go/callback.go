@@ -63,8 +63,7 @@ func NewLoopbackCallbackReceiver(redirectURI string) (*LoopbackCallbackReceiver,
 			http.Error(w, "missing authorization code", http.StatusBadRequest)
 			return
 		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write([]byte("<!doctype html><title>Umbra</title><p>Authorization completed. You can close this window.</p>"))
+		w.WriteHeader(http.StatusNoContent)
 		select {
 		case receiver.resultCh <- cb:
 		default:
