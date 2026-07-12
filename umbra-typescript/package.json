@@ -1,6 +1,6 @@
 {
   "name": "@umbrae-labs/umbra-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for Umbra desktop clients",
   "type": "module",
   "license": "MIT",
