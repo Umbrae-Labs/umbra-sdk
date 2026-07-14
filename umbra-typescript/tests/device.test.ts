@@ -182,6 +182,56 @@ describe('device signing', () => {
     })
   })
 
+  it('reports the device offline and clears local credentials on logout', async () => {
+    const tokenStore = new MemoryTokenStore()
+    await tokenStore.save({
+      accessToken: 'token',
+      tokenType: 'bearer',
+      expiresAt: new Date(Date.now() + 3600_000).toISOString(),
+    })
+    const deviceStore = new MemoryDeviceCredentialStore({
+      deviceId: 'dev_registered',
+      deviceSecret: 'device-secret',
+    })
+
+    const server = await startServer(async (req, res) => {
+      if (req.method === 'POST' && req.url === '/api/v1/client/devices/logout') {
+        const body = await readBody(req)
+        expect(req.headers.authorization).toBe('Bearer token')
+        expect(req.headers['x-umbra-device-id']).toBe('dev_registered')
+        await expectRequestSignature(req, {
+          body,
+          deviceId: 'dev_registered',
+          secret: 'device-secret',
+        })
+        json(res, 200, {
+          code: 0,
+          msg: 'success',
+          data: { device_id: 'dev_registered', status: 1 },
+        })
+        return
+      }
+      if (req.method === 'POST' && req.url === '/oauth2/revoke') {
+        res.writeHead(204)
+        res.end()
+        return
+      }
+      json(res, 404, { code: 1001, msg: 'not found', data: null })
+    })
+    servers.push(server)
+
+    const client = new UmbraClient({
+      baseUrl: server.url,
+      clientId: 'client',
+      tokenStore,
+      deviceStore,
+    })
+
+    await expect(client.logout()).resolves.toBeUndefined()
+    await expect(deviceStore.load()).resolves.toBeNull()
+    await expect(tokenStore.load()).resolves.toBeNull()
+  })
+
   it('automatically signs protected backup requests with stored device credentials', async () => {
     const tokenStore = new MemoryTokenStore()
     await tokenStore.save({

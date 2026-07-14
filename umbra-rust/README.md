@@ -41,8 +41,8 @@ async fn main() -> Result<(), umbra_sdk::UmbraError> {
 
     let client = UmbraClient::new(config)?;
 
-    // OAuth login. When device_registration is configured, this also registers
-    // the device if device.json has no usable device_id + device_secret yet.
+    // OAuth login. When device_registration is configured, this also reports the
+    // device online, reusing the stable server record when possible.
     client.login().await?;
 
     let quota = client.user().quota().await?;
@@ -60,6 +60,9 @@ async fn main() -> Result<(), umbra_sdk::UmbraError> {
             },
         )
         .await?;
+
+    // Reports this device offline, then clears local device and OAuth sessions.
+    client.logout().await?;
 
     Ok(())
 }

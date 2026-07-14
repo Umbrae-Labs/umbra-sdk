@@ -224,6 +224,30 @@ impl DeviceClient {
         })
     }
 
+    pub async fn logout(&self) -> Result<(), UmbraError> {
+        let credential = self.api.load_device_credential().await?;
+        let report_result = if credential
+            .as_ref()
+            .is_some_and(|value| !value.device_id.is_empty() && !value.device_secret.is_empty())
+        {
+            self.api
+                .post::<_, ClientDevice>("/client/devices/logout", &serde_json::json!({}))
+                .await
+                .map(|_| ())
+                .or_else(|error| {
+                    if error.is_device_session_closed() {
+                        Ok(())
+                    } else {
+                        Err(error)
+                    }
+                })
+        } else {
+            Ok(())
+        };
+        let clear_result = self.api.clear_device_credential().await;
+        report_result.and(clear_result)
+    }
+
     pub async fn rotate_secret(
         &self,
         device_id: Option<&str>,

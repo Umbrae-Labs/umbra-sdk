@@ -10,13 +10,20 @@ import (
 	"time"
 )
 
-func TestLogoutPreservesDeviceCredentials(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/oauth2/revoke" {
-			t.Fatalf("unexpected request path %q", r.URL.Path)
-		}
+func TestLogoutReportsDeviceOfflineAndClearsCredentials(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/v1/client/devices/logout", func(w http.ResponseWriter, r *http.Request) {
+		assertSignedRequest(t, r, []byte("{}"), "dev_stable", "device-secret")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"code": 0,
+			"msg":  "success",
+			"data": Device{DeviceID: "dev_stable", Status: 1},
+		})
+	})
+	mux.HandleFunc("/oauth2/revoke", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
-	}))
+	})
+	server := httptest.NewServer(mux)
 	defer server.Close()
 
 	ctx := context.Background()
@@ -29,8 +36,7 @@ func TestLogoutPreservesDeviceCredentials(t *testing.T) {
 		t.Fatal(err)
 	}
 	deviceStore := NewMemoryDeviceStore()
-	want := &DeviceCredentials{DeviceID: "dev_stable", DeviceSecret: "device-secret"}
-	if err := deviceStore.Save(ctx, want); err != nil {
+	if err := deviceStore.Save(ctx, &DeviceCredentials{DeviceID: "dev_stable", DeviceSecret: "device-secret"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -55,8 +61,8 @@ func TestLogoutPreservesDeviceCredentials(t *testing.T) {
 	}
 	if got, err := deviceStore.Load(ctx); err != nil {
 		t.Fatal(err)
-	} else if got == nil || got.DeviceID != want.DeviceID || got.DeviceSecret != want.DeviceSecret {
-		t.Fatalf("stored device credentials = %+v, want %+v", got, want)
+	} else if got != nil {
+		t.Fatalf("stored device credentials = %+v, want nil", got)
 	}
 }
 
@@ -83,6 +89,13 @@ func TestLoginAfterLogoutReusesRegisteredDevice(t *testing.T) {
 				DeviceSecret: "device-secret",
 				SecretOnce:   true,
 			},
+		})
+	})
+	mux.HandleFunc("/api/v1/client/devices/logout", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"code": 0,
+			"msg":  "success",
+			"data": Device{DeviceID: "dev_stable", Status: 1},
 		})
 	})
 	server := httptest.NewServer(mux)
@@ -122,8 +135,8 @@ func TestLoginAfterLogoutReusesRegisteredDevice(t *testing.T) {
 		t.Fatalf("second Login() error = %v", err)
 	}
 
-	if got := registrationCalls.Load(); got != 1 {
-		t.Fatalf("device registration calls = %d, want 1", got)
+	if got := registrationCalls.Load(); got != 2 {
+		t.Fatalf("device registration calls = %d, want 2", got)
 	}
 	if got, err := deviceStore.Load(ctx); err != nil {
 		t.Fatal(err)

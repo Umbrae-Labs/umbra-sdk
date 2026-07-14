@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -162,6 +163,28 @@ func (d *DeviceClient) EnsureDefaultRegistered(ctx context.Context) (*DeviceCred
 		return nil, invalidInput("device registration is not configured")
 	}
 	return d.EnsureRegistered(ctx, *d.defaultRegistration)
+}
+
+// Logout reports the current device session as offline and always clears the
+// local device credentials. Already offline, revoked, or missing sessions are
+// treated as successfully closed.
+func (d *DeviceClient) Logout(ctx context.Context) error {
+	if d.store == nil {
+		return nil
+	}
+	credentials, err := d.store.Load(ctx)
+	if err != nil {
+		return err
+	}
+	var reportErr error
+	if credentials != nil && credentials.DeviceID != "" && credentials.DeviceSecret != "" {
+		var out Device
+		reportErr = d.api.post(ctx, "/client/devices/logout", map[string]any{}, &out)
+		if isDeviceSessionClosed(reportErr) {
+			reportErr = nil
+		}
+	}
+	return errors.Join(reportErr, d.store.Clear(ctx))
 }
 
 // RotateSecret rotates the current user's device secret and stores the new

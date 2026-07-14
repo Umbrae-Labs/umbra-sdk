@@ -67,6 +67,9 @@ await uploadFile(
     negotiateByHash: true,
   },
 )
+
+// Reports this device offline, then clears local device and OAuth sessions.
+await client.logout()
 ```
 
 `detectWindowsDeviceMetadata` reads Windows version registry values and derives

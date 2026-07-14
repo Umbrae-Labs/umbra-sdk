@@ -69,12 +69,14 @@ impl UmbraClient {
     pub async fn login(&self) -> Result<Session, UmbraError> {
         let session = self.auth.login().await?;
         if let Some(registration) = self.device_registration.clone() {
-            self.devices.ensure_registered(registration).await?;
+            self.devices.register(registration).await?;
         }
         Ok(session)
     }
 
     pub async fn logout(&self) -> Result<(), UmbraError> {
-        self.auth.logout().await
+        let device_result = self.devices.logout().await;
+        let auth_result = self.auth.logout().await;
+        device_result.and(auth_result)
     }
 }

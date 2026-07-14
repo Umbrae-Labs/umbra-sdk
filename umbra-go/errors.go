@@ -117,3 +117,8 @@ func isInvalidToken(err error) bool {
 	}
 	return false
 }
+
+func isDeviceSessionClosed(err error) bool {
+	var ue *UmbraError
+	return errors.As(err, &ue) && (ue.Code == 3004 || ue.Code == 3005 || ue.Code == 3006)
+}

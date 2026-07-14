@@ -54,8 +54,8 @@ func main() {
 		panic(err)
 	}
 
-	// OAuth login. When DeviceRegistration is configured, this also registers
-	// the device if device.json has no usable device_id + device_secret yet.
+	// OAuth login. When DeviceRegistration is configured, this also reports the
+	// device online, reusing the stable server record when possible.
 	if _, err := client.Login(ctx); err != nil {
 		panic(err)
 	}
@@ -65,6 +65,11 @@ func main() {
 		panic(err)
 	}
 	_ = quota
+
+	// Reports this device offline, then clears local device and OAuth sessions.
+	if err := client.Logout(ctx); err != nil {
+		panic(err)
+	}
 }
 ```
 

@@ -66,6 +66,11 @@ export function isInvalidTokenError(error: unknown) {
     && (error.kind === 'invalid_token' || error.status === 401 || error.code === 1004)
 }
 
+export function isDeviceSessionClosedError(error: unknown) {
+  return error instanceof UmbraError
+    && (error.code === 3004 || error.code === 3005 || error.code === 3006)
+}
+
 function kindForCode(status: number, code: number | undefined): ErrorKind {
   switch (code) {
     case 1001:

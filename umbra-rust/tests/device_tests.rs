@@ -192,6 +192,71 @@ async fn rotates_device_secret_and_saves_replacement() {
     rotate.assert_async().await;
 }
 
+#[tokio::test]
+async fn reports_device_offline_and_clears_credentials_on_logout() {
+    let server = MockServer::start_async().await;
+    let logout = server
+        .mock_async(|when, then| {
+            when.method(POST)
+                .path("/api/v1/client/devices/logout")
+                .header("authorization", "Bearer token")
+                .header("x-umbra-device-id", "dev_registered")
+                .is_true(|req| verify_signature(req, "device-secret", "dev_registered"));
+            then.status(200).json_body(json!({
+                "code": 0,
+                "msg": "success",
+                "data": {
+                    "device_id": "dev_registered",
+                    "status": 1
+                }
+            }));
+        })
+        .await;
+    let revoke = server
+        .mock_async(|when, then| {
+            when.method(POST).path("/oauth2/revoke");
+            then.status(204);
+        })
+        .await;
+
+    let token_store = std::sync::Arc::new(MemoryTokenStore::default());
+    token_store
+        .save(&TokenSet {
+            access_token: "token".to_string(),
+            refresh_token: None,
+            token_type: "bearer".to_string(),
+            scope: None,
+            expires_at: Some(Utc::now() + Duration::hours(1)),
+        })
+        .await
+        .expect("save token");
+    let device_store = std::sync::Arc::new(MemoryDeviceCredentialStore::default());
+    device_store
+        .save(&DeviceCredential {
+            device_id: "dev_registered".to_string(),
+            device_secret: "device-secret".to_string(),
+        })
+        .await
+        .expect("save device");
+    let config = UmbraClient::builder()
+        .base_url(server.base_url())
+        .client_id("client")
+        .redirect_uri("http://127.0.0.1:0/auth/callback")
+        .token_store_arc(token_store.clone())
+        .device_store_arc(device_store.clone())
+        .browser_opener(NoopBrowserOpener)
+        .build()
+        .expect("config");
+    let client = UmbraClient::new(config).expect("client");
+
+    client.logout().await.expect("logout");
+
+    assert!(device_store.load().await.expect("load device").is_none());
+    assert!(token_store.load().await.expect("load token").is_none());
+    logout.assert_async().await;
+    revoke.assert_async().await;
+}
+
 #[test]
 fn parses_registration_token_like_server() {
     assert_eq!(

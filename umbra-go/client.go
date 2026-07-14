@@ -2,6 +2,7 @@ package umbra
 
 import (
 	"context"
+	"errors"
 	"net/http"
 )
 
@@ -58,26 +59,27 @@ func New(cfg Config) (*Client, error) {
 	return c, nil
 }
 
-// Login opens the browser, completes OAuth login, and registers the device when
-// Config.DeviceRegistration is set and no device credentials are stored yet.
+// Login opens the browser, completes OAuth login, and reports the device online
+// when Config.DeviceRegistration is set. Stable server records are reused.
 func (c *Client) Login(ctx context.Context) (*Session, error) {
 	session, err := c.Auth.Login(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if c.config.DeviceRegistration != nil {
-		if _, err := c.Devices.EnsureRegistered(ctx, *c.config.DeviceRegistration); err != nil {
+		if _, err := c.Devices.Register(ctx, *c.config.DeviceRegistration); err != nil {
 			return nil, err
 		}
 	}
 	return session, nil
 }
 
-// Logout revokes OAuth tokens where possible and clears the local token.
-// Device credentials are persisted independently of the OAuth session and
-// remain available so the same device can be reused after the next login.
+// Logout reports the device offline, revokes OAuth tokens where possible, and
+// clears both local credential stores.
 func (c *Client) Logout(ctx context.Context) error {
-	return c.Auth.Logout(ctx)
+	deviceErr := c.Devices.Logout(ctx)
+	authErr := c.Auth.Logout(ctx)
+	return errors.Join(deviceErr, authErr)
 }
 
 // HTTPClient returns the underlying HTTP client.

@@ -248,7 +248,9 @@ enum SigningSecret<'a> {
 }
 
 fn is_device_protected_path(path: &str) -> bool {
-    path.starts_with("/client/backup/") || path.starts_with("/client/sync/")
+    path.starts_with("/client/backup/")
+        || path.starts_with("/client/sync/")
+        || path == "/client/devices/logout"
 }
 
 fn path_with_query(url: &Url) -> String {

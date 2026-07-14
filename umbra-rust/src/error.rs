@@ -78,6 +78,16 @@ impl UmbraError {
             }
         )
     }
+
+    pub(crate) fn is_device_session_closed(&self) -> bool {
+        matches!(
+            self,
+            Self::Api {
+                code: Some(3004 | 3005 | 3006),
+                ..
+            }
+        )
+    }
 }
 
 fn kind_for_code(status: reqwest::StatusCode, code: i32) -> ErrorKind {

@@ -1,7 +1,7 @@
 import type { ApiClient } from './api'
 import type { DeviceCredential } from './store'
 import type { DeviceCredentialStore } from './store'
-import { UmbraError } from './errors'
+import { isDeviceSessionClosedError, UmbraError } from './errors'
 
 export const registrationDeviceId = 'registration'
 const registrationTokenPrefix = 'umbra_reg_v1_'
@@ -154,6 +154,29 @@ export class DeviceClient {
       throw UmbraError.invalidInput('device registration is not configured')
     }
     return this.ensureRegistered(this.#defaultRegistration)
+  }
+
+  async logout() {
+    const credential = await this.#store.load()
+    let reportError: unknown
+    try {
+      if (credential?.deviceId && credential.deviceSecret) {
+        await this.#api.post<ClientDevice>('/client/devices/logout', {})
+      }
+    }
+    catch (error) {
+      if (!isDeviceSessionClosedError(error)) reportError = error
+    }
+    let clearError: unknown
+    try {
+      await this.#store.clear()
+    }
+    catch (error) {
+      clearError = error
+    }
+    if (reportError && clearError) throw new AggregateError([reportError, clearError], 'device logout failed')
+    if (reportError) throw reportError
+    if (clearError) throw clearError
   }
 
   async rotateSecret(deviceId?: string) {

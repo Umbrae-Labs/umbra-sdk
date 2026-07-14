@@ -30,12 +30,28 @@ export class UmbraClient {
   async login(): Promise<Session> {
     const session = await this.auth.login()
     if (this.#deviceRegistration) {
-      await this.devices.ensureRegistered(this.#deviceRegistration)
+      await this.devices.register(this.#deviceRegistration)
     }
     return session
   }
 
   async logout(): Promise<void> {
-    await this.auth.logout()
+    let deviceError: unknown
+    try {
+      await this.devices.logout()
+    }
+    catch (error) {
+      deviceError = error
+    }
+    let authError: unknown
+    try {
+      await this.auth.logout()
+    }
+    catch (error) {
+      authError = error
+    }
+    if (deviceError && authError) throw new AggregateError([deviceError, authError], 'logout failed')
+    if (deviceError) throw deviceError
+    if (authError) throw authError
   }
 }
