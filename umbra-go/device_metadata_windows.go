@@ -3,8 +3,6 @@
 package umbra
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
@@ -35,11 +33,11 @@ func DetectWindowsDeviceMetadata(options WindowsDeviceMetadataOptions) (DeviceMe
 	} else if installID != "" {
 		metadata["install_id"] = installID
 	}
-	if !options.SkipMachineGUIDHash {
-		if machineGUID, err := readWindowsRegistryValue(`HKLM\SOFTWARE\Microsoft\Cryptography`, "MachineGuid"); err == nil && machineGUID != "" {
-			metadata["machine_guid_hash"] = hashWindowsMachineGUID(machineGUID, options.MachineGUIDHashSalt)
-		}
+	machineGUID, err := readWindowsRegistryValue(`HKLM\SOFTWARE\Microsoft\Cryptography`, "MachineGuid")
+	if err != nil || strings.TrimSpace(machineGUID) == "" {
+		return DeviceMetadata{}, invalidInput("windows MachineGuid is unavailable")
 	}
+	fingerprint := windowsDeviceFingerprint(machineGUID)
 	if len(registry) > 0 {
 		metadata["windows"] = map[string]any{
 			"product_name":    registry["ProductName"],
@@ -55,6 +53,7 @@ func DetectWindowsDeviceMetadata(options WindowsDeviceMetadataOptions) (DeviceMe
 		Platform:      "windows-" + runtime.GOARCH,
 		OSVersion:     windowsOSVersion(registry),
 		AppVersion:    strings.TrimSpace(options.AppVersion),
+		Fingerprint:   fingerprint,
 		Metadata:      metadata,
 		autoCollected: true,
 	}, nil
@@ -110,11 +109,6 @@ func windowsOSVersion(values map[string]string) string {
 		}
 	}
 	return strings.TrimSpace(version)
-}
-
-func hashWindowsMachineGUID(machineGUID, salt string) string {
-	sum := sha256.Sum256([]byte(strings.TrimSpace(salt) + strings.TrimSpace(machineGUID)))
-	return base64.RawURLEncoding.EncodeToString(sum[:])
 }
 
 func cloneMetadata(in map[string]any) map[string]any {

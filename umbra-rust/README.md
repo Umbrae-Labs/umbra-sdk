@@ -24,7 +24,6 @@ async fn main() -> Result<(), umbra_sdk::UmbraError> {
     let device = detect_windows_device_metadata(WindowsDeviceMetadataOptions {
         app_version: Some("1.0.0".to_string()),
         install_id_path: Some("device-install-id".into()),
-        machine_guid_hash_salt: Some("lunabox-desktop".to_string()),
         ..Default::default()
     })?;
 
@@ -68,8 +67,12 @@ async fn main() -> Result<(), umbra_sdk::UmbraError> {
 
 `detect_windows_device_metadata` is Windows-only. It collects host name,
 runtime architecture, Windows version registry values, a stable random
-`install_id`, and a hashed `MachineGuid`. Metadata is for display and audit
-only; request trust comes from the server-issued `device_id + device_secret`.
+`install_id`, and a versioned `windows:v1:*` fingerprint derived from
+`MachineGuid`. The fingerprint is independent of install ID, host name, and app
+version. Reinstalling Windows may reset
+`MachineGuid`. The fingerprint is a stable risk-control correlation key rather
+than hardware attestation; request trust still comes from the server-issued
+`device_id + device_secret`.
 Device registration only accepts metadata returned by SDK detection helpers.
 Manually constructed `DeviceMetadata` values are rejected by `register` and
 `ensure_registered`.

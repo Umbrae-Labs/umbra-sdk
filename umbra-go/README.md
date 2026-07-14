@@ -29,9 +29,8 @@ func main() {
 	ctx := context.Background()
 
 	device, err := umbra.DetectWindowsDeviceMetadata(umbra.WindowsDeviceMetadataOptions{
-		AppVersion:          "1.0.0",
-		InstallIDPath:       "device-install-id",
-		MachineGUIDHashSalt: "lunabox-desktop",
+		AppVersion:    "1.0.0",
+		InstallIDPath: "device-install-id",
 	})
 	if err != nil {
 		panic(err)
@@ -71,8 +70,12 @@ func main() {
 
 `DetectWindowsDeviceMetadata` is Windows-only. It collects host name, runtime
 architecture, Windows version registry values, a stable random `install_id`,
-and a hashed `MachineGuid`. Metadata is for display and audit only; request
-trust comes from the server-issued `device_id + device_secret`.
+and a versioned `windows:v1:*` fingerprint derived from `MachineGuid`. The
+fingerprint is independent of install ID, host name, and app version, so
+deleting local app data or device credentials does not change it. Reinstalling Windows may reset
+`MachineGuid`. The fingerprint is a stable risk-control correlation key, not
+hardware attestation; request trust still comes from the server-issued
+`device_id + device_secret`.
 
 Device registration only accepts metadata returned by SDK detection helpers.
 Manually constructed `DeviceMetadata` values are rejected by `Register` and

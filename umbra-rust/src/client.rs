@@ -75,9 +75,6 @@ impl UmbraClient {
     }
 
     pub async fn logout(&self) -> Result<(), UmbraError> {
-        let auth_result = self.auth.logout().await;
-        let device_result = self.devices.clear_credential().await;
-        auth_result?;
-        device_result
+        self.auth.logout().await
     }
 }

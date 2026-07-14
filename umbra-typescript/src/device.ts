@@ -11,6 +11,7 @@ export interface DeviceMetadata {
   platform?: string
   os_version?: string
   app_version?: string
+  fingerprint?: string
   metadata?: Record<string, unknown>
   readonly __umbraAutoCollectedDeviceMetadata: true
 }
@@ -58,6 +59,7 @@ export interface ClientDevice {
   platform?: string
   os_version?: string
   app_version?: string
+  fingerprint?: string
   metadata?: Record<string, unknown>
   status?: number
   created_at?: string

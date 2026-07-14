@@ -48,7 +48,6 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
       },
     }, {
       appVersion: '1.0.0',
-      machineGuidHashSalt: 'client-id',
     })
 
     expect(metadata).toMatchObject({
@@ -56,9 +55,9 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
       platform: 'windows-amd64',
       os_version: 'Windows 11 Pro 23H2 build 22631.3593',
       app_version: '1.0.0',
+      fingerprint: 'windows:v1:dedf1fa9f8b1d3b4826b2a935b09f6fca8280863881c1989d21c86885fdecf16',
     })
     expect(metadata.metadata?.install_id).toBe('install-123')
-    expect(metadata.metadata?.machine_guid_hash).toEqual(expect.any(String))
     expect(metadata.metadata?.windows).toMatchObject({
       product_name: 'Windows 11 Pro',
       display_version: '23H2',
@@ -66,6 +65,34 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
       ubr: '3593',
       edition_id: 'Professional',
     })
+  })
+
+  it('keeps the device fingerprint stable across formatting and collection options', () => {
+    const first = buildWindowsDeviceMetadata({
+      hostname: 'LunaBook',
+      arch: 'x64',
+      installId: 'first-install',
+      machineGuid: '4C4C4544-0038-3710-8051-CAC04F4B4332',
+      registry: {},
+    }, { appVersion: '1.0.0' })
+    const second = buildWindowsDeviceMetadata({
+      hostname: 'Renamed-LunaBook',
+      arch: 'x64',
+      installId: 'second-install',
+      machineGuid: ' {4c4c4544-0038-3710-8051-cac04f4b4332} ',
+      registry: {},
+    }, { appVersion: '2.0.0' })
+
+    expect(first.fingerprint).toBe('windows:v1:068442b331fed45178be4b7e7a403f261b19e55ff789340babc97e60cdcb414f')
+    expect(second.fingerprint).toBe(first.fingerprint)
+  })
+
+  it('requires MachineGuid for Windows metadata', () => {
+    expect(() => buildWindowsDeviceMetadata({
+      hostname: 'LunaBook',
+      arch: 'x64',
+      registry: {},
+    })).toThrow('windows MachineGuid is unavailable')
   })
 
   it('hides every registry query subprocess window', async () => {

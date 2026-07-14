@@ -12,13 +12,12 @@ export * from './node'
 
 const execFileAsync = promisify(execFile)
 const windowsCurrentVersionKey = String.raw`HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion`
+const windowsDeviceFingerprintDomain = 'umbra-device-fingerprint:v1\0windows\0'
 
 export interface WindowsDeviceMetadataOptions {
   appVersion?: string
   installId?: string
   installIdPath?: string
-  machineGuidHashSalt?: string
-  skipMachineGuidHash?: boolean
   metadata?: Record<string, unknown>
 }
 
@@ -39,16 +38,17 @@ export async function detectWindowsDeviceMetadata(options: WindowsDeviceMetadata
   const installId = options.installId?.trim()
     || await loadOrCreateWindowsInstallId(options.installIdPath)
     || undefined
-  const machineGuid = options.skipMachineGuidHash
-    ? undefined
-    : await readWindowsRegistryValue(String.raw`HKLM\SOFTWARE\Microsoft\Cryptography`, 'MachineGuid').catch(() => undefined)
+  const machineGuid = await readWindowsRegistryValue(String.raw`HKLM\SOFTWARE\Microsoft\Cryptography`, 'MachineGuid')
+  if (!machineGuid.trim()) {
+    throw UmbraError.invalidInput('windows MachineGuid is unavailable')
+  }
 
   return markAutoCollectedDeviceMetadata(buildWindowsDeviceMetadata({
     hostname: hostname(),
     arch: process.arch,
     registry,
     ...(installId ? { installId } : {}),
-    ...(machineGuid ? { machineGuid } : {}),
+    machineGuid,
   }, options))
 }
 
@@ -56,12 +56,12 @@ export function buildWindowsDeviceMetadata(
   source: WindowsDeviceMetadataSource,
   options: WindowsDeviceMetadataOptions = {},
 ): CollectedDeviceMetadataFields {
+  if (!source.machineGuid?.trim()) {
+    throw UmbraError.invalidInput('windows MachineGuid is unavailable')
+  }
   const metadata: Record<string, unknown> = { ...(options.metadata ?? {}) }
   const installId = options.installId?.trim() || source.installId?.trim()
   if (installId) metadata.install_id = installId
-  if (!options.skipMachineGuidHash && source.machineGuid?.trim()) {
-    metadata.machine_guid_hash = hashMachineGuid(source.machineGuid, options.machineGuidHashSalt)
-  }
   metadata.windows = {
     product_name: source.registry.ProductName || '',
     display_version: source.registry.DisplayVersion || '',
@@ -75,6 +75,7 @@ export function buildWindowsDeviceMetadata(
     platform: `windows-${normalizeWindowsArch(source.arch)}`,
     os_version: windowsOsVersion(source.registry),
     ...(options.appVersion?.trim() ? { app_version: options.appVersion.trim() } : {}),
+    fingerprint: windowsDeviceFingerprint(source.machineGuid),
     metadata,
   }
 }
@@ -132,11 +133,13 @@ function windowsOsVersion(values: Record<string, string>) {
   return version.trim()
 }
 
-function hashMachineGuid(machineGuid: string, salt = '') {
-  return createHash('sha256')
-    .update(salt.trim())
-    .update(machineGuid.trim())
-    .digest('base64url')
+function windowsDeviceFingerprint(machineGuid: string) {
+  const normalized = machineGuid.trim().replace(/^\{\s*|\s*\}$/g, '').trim().toLowerCase()
+  if (!normalized) return ''
+  return `windows:v1:${createHash('sha256')
+    .update(windowsDeviceFingerprintDomain)
+    .update(normalized)
+    .digest('hex')}`
 }
 
 function normalizeWindowsArch(arch: string) {

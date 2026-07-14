@@ -73,14 +73,11 @@ func (c *Client) Login(ctx context.Context) (*Session, error) {
 	return session, nil
 }
 
-// Logout revokes OAuth tokens where possible and clears local token and device
-// credentials.
+// Logout revokes OAuth tokens where possible and clears the local token.
+// Device credentials are persisted independently of the OAuth session and
+// remain available so the same device can be reused after the next login.
 func (c *Client) Logout(ctx context.Context) error {
-	err := c.Auth.Logout(ctx)
-	if clearErr := c.config.DeviceStore.Clear(ctx); err == nil {
-		err = clearErr
-	}
-	return err
+	return c.Auth.Logout(ctx)
 }
 
 // HTTPClient returns the underlying HTTP client.

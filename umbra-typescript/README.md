@@ -38,7 +38,6 @@ import {
 const device = await detectWindowsDeviceMetadata({
   appVersion: '1.0.0',
   installIdPath: 'device-install-id',
-  machineGuidHashSalt: 'lunabox-desktop',
 })
 
 const client = new UmbraClient({
@@ -70,9 +69,12 @@ await uploadFile(
 )
 ```
 
-`detectWindowsDeviceMetadata` reads Windows version registry values and hashes
-`MachineGuid` before placing it in metadata. Metadata is for display and audit
-only; request trust comes from the server-issued `device_id + device_secret`.
+`detectWindowsDeviceMetadata` reads Windows version registry values and derives
+a versioned `windows:v1:*` fingerprint from `MachineGuid`. The fingerprint is
+independent of install ID, host name, and app version. Reinstalling Windows may reset
+`MachineGuid`. The fingerprint is a stable risk-control correlation key rather
+than hardware attestation; request trust still comes from the server-issued
+`device_id + device_secret`.
 Device registration only accepts metadata returned by SDK detection helpers.
 Plain object literals are rejected by `register` and `ensureRegistered`.
 

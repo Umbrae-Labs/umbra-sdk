@@ -38,11 +38,12 @@ type DeviceCredentials struct {
 }
 
 type DeviceMetadata struct {
-	Name       string         `json:"name"`
-	Platform   string         `json:"platform,omitempty"`
-	AppVersion string         `json:"app_version,omitempty"`
-	OSVersion  string         `json:"os_version,omitempty"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
+	Name        string         `json:"name"`
+	Platform    string         `json:"platform,omitempty"`
+	AppVersion  string         `json:"app_version,omitempty"`
+	OSVersion   string         `json:"os_version,omitempty"`
+	Fingerprint string         `json:"fingerprint,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
 
 	autoCollected bool
 }
@@ -66,6 +67,7 @@ type Device struct {
 	Platform                  string         `json:"platform"`
 	AppVersion                string         `json:"app_version"`
 	OSVersion                 string         `json:"os_version"`
+	Fingerprint               string         `json:"fingerprint,omitempty"`
 	Metadata                  map[string]any `json:"metadata,omitempty"`
 	Status                    uint8          `json:"status"`
 	CreatedAt                 time.Time      `json:"created_at"`

@@ -27,6 +27,8 @@ pub struct DeviceMetadata {
     pub os_version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub app_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fingerprint: Option<String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub metadata: BTreeMap<String, serde_json::Value>,
     #[serde(skip)]
@@ -70,6 +72,8 @@ pub struct ClientDevice {
     pub os_version: Option<String>,
     #[serde(default)]
     pub app_version: Option<String>,
+    #[serde(default)]
+    pub fingerprint: Option<String>,
     #[serde(default)]
     pub status: Option<i32>,
 }
@@ -157,6 +161,7 @@ impl DeviceMetadata {
         platform: Option<String>,
         os_version: Option<String>,
         app_version: Option<String>,
+        fingerprint: Option<String>,
         metadata: BTreeMap<String, serde_json::Value>,
     ) -> Self {
         Self {
@@ -164,6 +169,7 @@ impl DeviceMetadata {
             platform,
             os_version,
             app_version,
+            fingerprint,
             metadata,
             auto_collected: true,
         }

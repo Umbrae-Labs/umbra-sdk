@@ -10,6 +10,8 @@ use sha2::{Digest, Sha256};
 
 use crate::{device::DeviceMetadata, UmbraError};
 
+const WINDOWS_DEVICE_FINGERPRINT_DOMAIN: &[u8] = b"umbra-device-fingerprint:v1\0windows\0";
+
 #[cfg(windows)]
 mod windows;
 
@@ -18,8 +20,6 @@ pub struct WindowsDeviceMetadataOptions {
     pub app_version: Option<String>,
     pub install_id: Option<String>,
     pub install_id_path: Option<PathBuf>,
-    pub machine_guid_hash_salt: Option<String>,
-    pub skip_machine_guid_hash: bool,
     pub metadata: BTreeMap<String, Value>,
 }
 
@@ -70,25 +70,6 @@ pub fn build_windows_device_metadata(
     if let Some(install_id) = install_id {
         metadata.insert("install_id".to_string(), serde_json::json!(install_id));
     }
-    if !options.skip_machine_guid_hash {
-        if let Some(machine_guid) = source
-            .machine_guid
-            .as_deref()
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-        {
-            metadata.insert(
-                "machine_guid_hash".to_string(),
-                serde_json::json!(hash_windows_machine_guid(
-                    machine_guid,
-                    options
-                        .machine_guid_hash_salt
-                        .as_deref()
-                        .unwrap_or_default()
-                )),
-            );
-        }
-    }
     metadata.insert(
         "windows".to_string(),
         serde_json::json!({
@@ -100,6 +81,14 @@ pub fn build_windows_device_metadata(
         }),
     );
 
+    let machine_guid = source
+        .machine_guid
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| UmbraError::invalid_input("windows MachineGuid is unavailable"))?;
+    let fingerprint = Some(windows_device_fingerprint(machine_guid));
+
     Ok(DeviceMetadata::auto_collected(
         source.hostname.trim().to_owned(),
         Some(format!("windows-{}", normalize_windows_arch(&source.arch))),
@@ -110,6 +99,7 @@ pub fn build_windows_device_metadata(
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned),
+        fingerprint,
         metadata,
     ))
 }
@@ -178,13 +168,6 @@ fn windows_os_version(values: &BTreeMap<String, String>) -> String {
     version.trim().to_owned()
 }
 
-fn hash_windows_machine_guid(machine_guid: &str, salt: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(salt.trim().as_bytes());
-    hasher.update(machine_guid.trim().as_bytes());
-    URL_SAFE_NO_PAD.encode(hasher.finalize())
-}
-
 fn normalize_windows_arch(arch: &str) -> &str {
     match arch {
         "x86_64" => "amd64",
@@ -234,7 +217,6 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
             },
             WindowsDeviceMetadataOptions {
                 app_version: Some("1.0.0".to_string()),
-                machine_guid_hash_salt: Some("client-id".to_string()),
                 ..Default::default()
             },
         )
@@ -251,7 +233,26 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
             metadata.metadata.get("install_id"),
             Some(&serde_json::json!("install-123"))
         );
-        assert!(metadata.metadata.contains_key("machine_guid_hash"));
+        assert_eq!(
+            metadata.fingerprint.as_deref(),
+            Some("windows:v1:dedf1fa9f8b1d3b4826b2a935b09f6fca8280863881c1989d21c86885fdecf16")
+        );
+    }
+
+    #[test]
+    fn requires_windows_machine_guid() {
+        let err = build_windows_device_metadata(
+            WindowsDeviceMetadataSource {
+                hostname: "LunaBook".to_string(),
+                arch: "x86_64".to_string(),
+                ..Default::default()
+            },
+            WindowsDeviceMetadataOptions::default(),
+        )
+        .unwrap_err();
+        assert!(err
+            .to_string()
+            .contains("windows MachineGuid is unavailable"));
     }
 
     #[test]
@@ -263,4 +264,31 @@ HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion
         assert_eq!(first, second);
         assert_eq!(std::fs::read_to_string(path).unwrap(), format!("{first}\n"));
     }
+
+    #[test]
+    fn keeps_windows_device_fingerprint_stable() {
+        let first = windows_device_fingerprint("4C4C4544-0038-3710-8051-CAC04F4B4332");
+        let second = windows_device_fingerprint(" {4c4c4544-0038-3710-8051-cac04f4b4332} ");
+        assert_eq!(
+            first,
+            "windows:v1:068442b331fed45178be4b7e7a403f261b19e55ff789340babc97e60cdcb414f"
+        );
+        assert_eq!(second, first);
+    }
+}
+
+fn windows_device_fingerprint(machine_guid: &str) -> String {
+    let normalized = machine_guid
+        .trim()
+        .trim_start_matches('{')
+        .trim_end_matches('}')
+        .trim()
+        .to_lowercase();
+    if normalized.is_empty() {
+        return String::new();
+    }
+    let mut hasher = Sha256::new();
+    hasher.update(WINDOWS_DEVICE_FINGERPRINT_DOMAIN);
+    hasher.update(normalized.as_bytes());
+    format!("windows:v1:{:x}", hasher.finalize())
 }

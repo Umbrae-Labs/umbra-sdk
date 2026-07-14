@@ -36,11 +36,6 @@ export class UmbraClient {
   }
 
   async logout(): Promise<void> {
-    try {
-      await this.auth.logout()
-    }
-    finally {
-      await this.devices.clearCredential()
-    }
+    await this.auth.logout()
   }
 }

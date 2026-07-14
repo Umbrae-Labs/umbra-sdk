@@ -26,20 +26,20 @@ pub(super) fn detect_source(
     } else {
         None
     };
-    let machine_guid = if options.skip_machine_guid_hash {
-        None
-    } else {
-        read_windows_registry_value(r"HKLM\SOFTWARE\Microsoft\Cryptography", "MachineGuid")
-            .ok()
-            .filter(|value| !value.trim().is_empty())
-    };
+    let machine_guid =
+        read_windows_registry_value(r"HKLM\SOFTWARE\Microsoft\Cryptography", "MachineGuid")?;
+    if machine_guid.trim().is_empty() {
+        return Err(UmbraError::invalid_input(
+            "windows MachineGuid is unavailable",
+        ));
+    }
 
     Ok(WindowsDeviceMetadataSource {
         hostname: std::env::var("COMPUTERNAME").unwrap_or_default(),
         arch: std::env::consts::ARCH.to_string(),
         registry: read_current_version_registry(),
         install_id,
-        machine_guid,
+        machine_guid: Some(machine_guid),
     })
 }
 
